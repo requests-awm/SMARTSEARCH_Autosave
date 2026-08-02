@@ -1,0 +1,21 @@
+{
+  "name": "smartsearch-auto",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "check": "node --check server.js",
+    "token": "node scripts/make-sso-token.mjs",
+    "sync-supabase": "node scripts/sync-to-supabase.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.111.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "googleapis": "^173.0.0"
+  }
+}

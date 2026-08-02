@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SmartSearch Uploader</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <button class="top-nav-btn nav-left" id="navRecords">🗂 Records</button>
+    <button class="top-nav-btn nav-right" id="navReminders">🔔 Reminders<span class="nav-badge" id="reminderBadge" hidden>0</span></button>
+    <nav class="stepper" id="stepper">
+      <div class="step" data-step="0"><span class="dot"></span><span class="step-label">Queue</span></div>
+      <div class="step-line"></div>
+      <div class="step" data-step="1"><span class="dot"></span><span class="step-label">Review &amp; Checks</span></div>
+      <div class="step-line"></div>
+      <div class="step" data-step="2"><span class="dot"></span><span class="step-label">Process</span></div>
+      <div class="step-line"></div>
+      <div class="step" data-step="3"><span class="dot"></span><span class="step-label">Summary</span></div>
+    </nav>
+  </header>
+
+  <main class="page" id="app"></main>
+
+  <footer class="bottombar">
+    <div class="bottombar-left" id="barLeft"></div>
+    <div class="bottombar-dots" id="barDots"></div>
+    <div class="bottombar-right" id="barRight"></div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
