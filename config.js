@@ -23,6 +23,7 @@ export const cfg = {
   ssoSecret: env('SSO_SHARED_SECRET'),
   ssoAud: env('SSO_AUD'),
   ssoEnforced: env('SSO_ENFORCED', 'true').toLowerCase() !== 'false',
+  ssoPortalUrl: env('SSO_PORTAL_URL'),
   cookieSecure: env('COOKIE_SECURE', 'false').toLowerCase() === 'true',
 
   supabaseUrl: env('SUPABASE_URL'),
