@@ -24,6 +24,7 @@ export const cfg = {
   ssoAud: env('SSO_AUD'),
   ssoEnforced: env('SSO_ENFORCED', 'true').toLowerCase() !== 'false',
   ssoPortalUrl: env('SSO_PORTAL_URL'),
+  allowedEmailDomain: env('ALLOWED_EMAIL_DOMAIN', 'ascotwm.com'),
   cookieSecure: env('COOKIE_SECURE', 'false').toLowerCase() === 'true',
 
   supabaseUrl: env('SUPABASE_URL'),

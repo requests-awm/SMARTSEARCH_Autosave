@@ -16,6 +16,7 @@ import { sweepContactsWithSmartSearch } from './lib/insightly.js';
 import { dueReminders, buildReminderEmail, sendReminderEmail } from './lib/email.js';
 import fs from 'node:fs';
 import { ssoMiddleware } from './lib/sso.js';
+import { registerGoogleLoginRoutes } from './lib/googlelogin.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -34,10 +35,14 @@ app.use((req, res, next) => {
   next();
 });
 
+const wrap = (fn) => (req, res) =>
+  fn(req, res).catch((err) => res.status(500).json({ error: err.message }));
+
 app.get(['/healthz', '/health'], (req, res) => res.json({ ok: true }));
 app.get('/favicon.svg', (req, res) =>
   res.type('image/svg+xml').sendFile(path.join(__dirname, 'public', 'favicon.svg'))
 );
+registerGoogleLoginRoutes(app, wrap);
 
 if (cfg.ssoEnforced) {
   if (!cfg.ssoSecret) {
@@ -51,9 +56,6 @@ if (cfg.ssoEnforced) {
 }
 
 app.use(express.static(path.join(__dirname, 'public')));
-
-const wrap = (fn) => (req, res) =>
-  fn(req, res).catch((err) => res.status(500).json({ error: err.message }));
 
 app.get('/api/config', (req, res) => {
   res.json({
