@@ -25,6 +25,8 @@ export const cfg = {
   ssoEnforced: env('SSO_ENFORCED', 'true').toLowerCase() !== 'false',
   ssoPortalUrl: env('SSO_PORTAL_URL'),
   allowedEmailDomain: env('ALLOWED_EMAIL_DOMAIN', 'ascotwm.com'),
+  googleLoginClientId: env('GOOGLE_LOGIN_CLIENT_ID') || env('GOOGLE_OAUTH_CLIENT_ID'),
+  googleLoginClientSecret: env('GOOGLE_LOGIN_CLIENT_SECRET') || env('GOOGLE_OAUTH_CLIENT_SECRET'),
   cookieSecure: env('COOKIE_SECURE', 'false').toLowerCase() === 'true',
 
   supabaseUrl: env('SUPABASE_URL'),
