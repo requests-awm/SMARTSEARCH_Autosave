@@ -55,7 +55,13 @@ if (cfg.ssoEnforced) {
   console.warn('WARNING: SSO_ENFORCED=false — the app is running WITHOUT authentication.');
 }
 
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(
+  express.static(path.join(__dirname, 'public'), {
+    setHeaders: (res, filePath) => {
+      if (!filePath.endsWith('.svg')) res.setHeader('Cache-Control', 'no-cache');
+    },
+  })
+);
 
 app.get('/api/config', (req, res) => {
   res.json({
