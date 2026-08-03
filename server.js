@@ -4,7 +4,14 @@ import { fileURLToPath } from 'node:url';
 import { cfg, missingCredentials } from './config.js';
 import { getSectionTasks, getAttachments, summarizeTask } from './lib/asana.js';
 import { precheck, runPipeline } from './lib/pipeline.js';
-import { searchRecords, recordsWithReminders, dismissReminder, allRecords, upsertRecord } from './lib/store.js';
+import {
+  searchRecords,
+  recordsWithReminders,
+  dismissReminder,
+  allRecords,
+  upsertRecord,
+  hydrateFromSupabase,
+} from './lib/store.js';
 import { sweepContactsWithSmartSearch } from './lib/insightly.js';
 import { ssoMiddleware } from './lib/sso.js';
 
@@ -141,6 +148,13 @@ const server = app.listen(cfg.port, () => {
   const missing = missingCredentials();
   console.log(`SmartSearch Auto running on http://localhost:${cfg.port}`);
   if (missing.length) console.log(`Missing credentials: ${missing.join(', ')}`);
+  hydrateFromSupabase().then((result) =>
+    console.log(
+      result.hydrated
+        ? `Store hydrated from Supabase: ${result.remote} remote records, ${result.applied} applied locally`
+        : `Store hydration skipped: ${result.reason}`
+    )
+  );
 });
 
 for (const signal of ['SIGTERM', 'SIGINT']) {

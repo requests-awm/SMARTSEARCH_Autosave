@@ -69,6 +69,26 @@ docker compose up -d --build
 - Behind an HTTPS reverse proxy set `COOKIE_SECURE=true` (adds the Secure flag to the SSO cookie); `trust proxy` is already enabled
 - Security headers (CSP, nosniff, frame deny, no-referrer) are set on every response
 
+## Deployment (Google Cloud Run)
+
+```
+gcloud run deploy smartsearch-auto --source . --region europe-west2 --max-instances 1
+```
+
+- **Env vars**: `.env` is NOT in the image. Set every variable from `.env.example` on the
+  service (Console → Cloud Run → Edit → Variables), with secrets ideally referenced from
+  Secret Manager (`ASANA_PAT`, `INSIGHTLY_API_KEY`, `GOOGLE_OAUTH_*`, `SSO_SHARED_SECRET`,
+  `SUPABASE_SERVICE_ROLE_KEY`)
+- **PORT**: injected by Cloud Run automatically — the app reads it, do not set it manually
+- **Storage**: the container disk is ephemeral. On boot the app hydrates `data/records.json`
+  from Supabase (`awm_smartsearch.smartsearch_records`) and mirrors every write back, so
+  records survive restarts. Keep `--max-instances 1` so concurrent instances don't hold
+  diverging local copies
+- **HTTPS/cookies**: Cloud Run terminates TLS; `trust proxy` is enabled so the SSO cookie
+  gets its Secure flag automatically (or force with `COOKIE_SECURE=true`)
+- Docker `HEALTHCHECK` is ignored by Cloud Run (harmless); `/healthz` remains available
+  for uptime checks
+
 ## Flow in the UI
 
 **Queue** → lists section tasks with eligibility pills → **Review & Checks** → shows the field/attachment checks plus live Insightly + Drive lookups → **Process** → streams each pipeline step → **Summary** → links to the uploaded file and updated records.
