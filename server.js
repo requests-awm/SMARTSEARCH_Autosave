@@ -204,6 +204,53 @@ if (cfg.schedulerEnabled) {
   console.log('Reminder email scheduler OFF (SCHEDULER_ENABLED != true)');
 }
 
+const autoFailures = new Map();
+let autoTickRunning = false;
+
+async function autoProcessTick() {
+  if (autoTickRunning) return;
+  autoTickRunning = true;
+  try {
+    const tasks = (await getSectionTasks()).filter((t) => !t.completed);
+    for (const task of tasks) {
+      const attachments = await getAttachments(task.gid);
+      const summary = summarizeTask(task, attachments);
+      if (!summary.eligible || summary.alreadyProcessed) continue;
+
+      const failure = autoFailures.get(summary.gid);
+      if (failure && failure.count >= 3 && Date.now() - failure.lastAttempt < 6 * 3600 * 1000) continue;
+
+      console.log(`Auto-processing: ${summary.name}`);
+      let error = null;
+      await runPipeline(summary.gid, (event) => {
+        if (event.done && !event.ok) error = event.error;
+        else if (event.status === 'done') console.log(`  ✓ ${event.label}${event.detail ? ` — ${event.detail}` : ''}`);
+        else if (event.status === 'error') console.warn(`  ✕ ${event.label} — ${event.detail}`);
+      });
+      if (error) {
+        const prev = autoFailures.get(summary.gid) || { count: 0 };
+        autoFailures.set(summary.gid, { count: prev.count + 1, lastAttempt: Date.now() });
+        console.warn(`Auto-process FAILED (attempt ${prev.count + 1}) for ${summary.name}: ${error}`);
+      } else {
+        autoFailures.delete(summary.gid);
+        console.log(`Auto-process COMPLETE: ${summary.name}`);
+      }
+    }
+  } catch (err) {
+    console.warn(`Auto-process tick error: ${err.message}`);
+  } finally {
+    autoTickRunning = false;
+  }
+}
+
+if (cfg.autoProcessEnabled) {
+  console.log(`Auto-processing ON — scanning section every ${cfg.autoProcessIntervalMinutes} min`);
+  setInterval(autoProcessTick, cfg.autoProcessIntervalMinutes * 60 * 1000);
+  setTimeout(autoProcessTick, 20000);
+} else {
+  console.log('Auto-processing OFF (AUTO_PROCESS_ENABLED != true) — tasks are processed manually in the UI');
+}
+
 for (const signal of ['SIGTERM', 'SIGINT']) {
   process.on(signal, () => {
     console.log(`${signal} received — shutting down`);

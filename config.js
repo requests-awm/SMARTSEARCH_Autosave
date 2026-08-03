@@ -36,6 +36,8 @@ export const cfg = {
   supabaseSchema: env('SUPABASE_SCHEMA', 'awm_smartsearch'),
 
   schedulerEnabled: env('SCHEDULER_ENABLED', 'false').toLowerCase() === 'true',
+  autoProcessEnabled: env('AUTO_PROCESS_ENABLED', 'false').toLowerCase() === 'true',
+  autoProcessIntervalMinutes: Number(env('AUTO_PROCESS_INTERVAL_MINUTES', '5')),
   reminderEmailTo: env('REMINDER_EMAIL_TO', 'zubayr.fish@ascotwm.com'),
   reminderEmailFrom: env('REMINDER_EMAIL_FROM', 'operations.support@ascotwm.com'),
   reminderEmailHour: Number(env('REMINDER_EMAIL_HOUR', '8')),

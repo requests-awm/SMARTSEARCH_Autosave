@@ -96,6 +96,17 @@ gcloud run deploy smartsearch-auto --source . --region europe-west2 --max-instan
   use **`/health`** — Google's frontend reserves `/healthz` and answers it with its own 404
   before the container ever sees it (`/healthz` still works locally/Docker)
 
+## Auto-processing (Zapier-parity mode)
+
+Set `AUTO_PROCESS_ENABLED=true` and the server scans the watched section every
+`AUTO_PROCESS_INTERVAL_MINUTES` (default 5). Any open task with the conducted date
+filled, a PDF attached, and a contact ID in its name is run through the full pipeline
+automatically — Asana `aU_SmartSearch_URL` + `aU_SmartSearch_Expiry_Date`, Drive upload,
+Insightly update, task completion — no human click. Guardrails: a per-task lock prevents
+double-processing (auto vs manual), tasks whose URL field is already populated are
+skipped, and a task that fails 3 times is parked for 6 hours before retrying.
+Keep it `false` locally; enable it on the Cloud Run service only.
+
 ## Flow in the UI
 
 **Queue** → lists section tasks with eligibility pills → **Review & Checks** → shows the field/attachment checks plus live Insightly + Drive lookups → **Process** → streams each pipeline step → **Summary** → links to the uploaded file and updated records.
