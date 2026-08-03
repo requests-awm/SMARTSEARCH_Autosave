@@ -27,6 +27,8 @@ export const cfg = {
   allowedEmailDomain: env('ALLOWED_EMAIL_DOMAIN', 'ascotwm.com'),
   googleLoginClientId: env('GOOGLE_LOGIN_CLIENT_ID') || env('GOOGLE_OAUTH_CLIENT_ID'),
   googleLoginClientSecret: env('GOOGLE_LOGIN_CLIENT_SECRET') || env('GOOGLE_OAUTH_CLIENT_SECRET'),
+  iapEnabled: env('IAP_ENABLED', 'false').toLowerCase() === 'true',
+  iapAudience: env('IAP_AUDIENCE'),
   cookieSecure: env('COOKIE_SECURE', 'false').toLowerCase() === 'true',
 
   supabaseUrl: env('SUPABASE_URL'),

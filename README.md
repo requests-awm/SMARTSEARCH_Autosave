@@ -87,6 +87,11 @@ gcloud run deploy smartsearch-auto --source . --region europe-west2 --max-instan
   diverging local copies
 - **HTTPS/cookies**: Cloud Run terminates TLS; `trust proxy` is enabled so the SSO cookie
   gets its Secure flag automatically (or force with `COOKIE_SECURE=true`)
+- **Staff sign-in via IAP** (recommended): enable Identity-Aware Proxy on the service and
+  grant `domain:ascotwm.com` the *IAP-secured Web App User* role — no OAuth clients or
+  secrets needed. Set `IAP_ENABLED=true` on the service; the app cryptographically verifies
+  IAP's `x-goog-iap-jwt-assertion` (ES256 against Google's public keys) and only admits
+  `@ascotwm.com` identities. Token links (`?sso_token=`) keep working for automation
 - Docker `HEALTHCHECK` is ignored by Cloud Run (harmless). For uptime checks on Cloud Run
   use **`/health`** — Google's frontend reserves `/healthz` and answers it with its own 404
   before the container ever sees it (`/healthz` still works locally/Docker)
