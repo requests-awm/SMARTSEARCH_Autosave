@@ -37,6 +37,10 @@ export const cfg = {
   smtpPort: Number(env('SMTP_PORT', '465')),
   smtpUser: env('SMTP_USER'),
   smtpPass: env('SMTP_PASS'),
+  gmailClientId: env('GMAIL_CLIENT_ID'),
+  gmailClientSecret: env('GMAIL_CLIENT_SECRET'),
+  gmailRefreshToken: env('GMAIL_REFRESH_TOKEN'),
+  gmailFromEmail: env('GMAIL_FROM_EMAIL'),
 
   insightlyApiKey: env('INSIGHTLY_API_KEY'),
   insightlyBaseUrl: env('INSIGHTLY_API_URL', 'https://api.na1.insightly.com/v3.1'),
