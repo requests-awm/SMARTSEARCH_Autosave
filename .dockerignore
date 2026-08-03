@@ -9,3 +9,4 @@ data
 service-account*.json
 supabase
 README.md
+env.yaml

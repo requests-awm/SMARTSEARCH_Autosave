@@ -72,13 +72,14 @@ docker compose up -d --build
 ## Deployment (Google Cloud Run)
 
 ```
-gcloud run deploy smartsearch-auto --source . --region europe-west2 --max-instances 1
+node scripts/make-env-yaml.mjs   # converts .env -> env.yaml (PORT excluded, file gitignored)
+gcloud run deploy smartsearch-auto --source . --region europe-west2 --max-instances 1 --env-vars-file env.yaml
 ```
 
-- **Env vars**: `.env` is NOT in the image. Set every variable from `.env.example` on the
-  service (Console → Cloud Run → Edit → Variables), with secrets ideally referenced from
-  Secret Manager (`ASANA_PAT`, `INSIGHTLY_API_KEY`, `GOOGLE_OAUTH_*`, `SSO_SHARED_SECRET`,
-  `SUPABASE_SERVICE_ROLE_KEY`)
+- **Env vars are mandatory**: `.env` is NOT in the image, and the app exits on boot if
+  `SSO_SHARED_SECRET` is missing (fail-closed) — deploying without env vars produces
+  "container failed to start and listen on PORT". Use the env.yaml flow above, or set
+  variables in Console → Cloud Run → Edit → Variables (secrets ideally via Secret Manager)
 - **PORT**: injected by Cloud Run automatically — the app reads it, do not set it manually
 - **Storage**: the container disk is ephemeral. On boot the app hydrates `data/records.json`
   from Supabase (`awm_smartsearch.smartsearch_records`) and mirrors every write back, so
