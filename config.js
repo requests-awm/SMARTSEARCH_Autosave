@@ -29,6 +29,15 @@ export const cfg = {
   supabaseServiceKey: env('SUPABASE_SERVICE_ROLE_KEY'),
   supabaseSchema: env('SUPABASE_SCHEMA', 'awm_smartsearch'),
 
+  schedulerEnabled: env('SCHEDULER_ENABLED', 'false').toLowerCase() === 'true',
+  reminderEmailTo: env('REMINDER_EMAIL_TO', 'zubayr.fish@ascotwm.com'),
+  reminderEmailFrom: env('REMINDER_EMAIL_FROM', 'operations.support@ascotwm.com'),
+  reminderEmailHour: Number(env('REMINDER_EMAIL_HOUR', '8')),
+  smtpHost: env('SMTP_HOST', 'smtp.gmail.com'),
+  smtpPort: Number(env('SMTP_PORT', '465')),
+  smtpUser: env('SMTP_USER'),
+  smtpPass: env('SMTP_PASS'),
+
   insightlyApiKey: env('INSIGHTLY_API_KEY'),
   insightlyBaseUrl: env('INSIGHTLY_API_URL', 'https://api.na1.insightly.com/v3.1'),
   insightlyUrlField: env('INSIGHTLY_URL_FIELD', 'SmartSearch_URL__c'),

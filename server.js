@@ -13,6 +13,8 @@ import {
   hydrateFromSupabase,
 } from './lib/store.js';
 import { sweepContactsWithSmartSearch } from './lib/insightly.js';
+import { dueReminders, buildReminderEmail, sendReminderEmail } from './lib/email.js';
+import fs from 'node:fs';
 import { ssoMiddleware } from './lib/sso.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -132,6 +134,19 @@ app.post(
   })
 );
 
+app.get('/api/reminders/email-preview', (req, res) => {
+  const records = dueReminders();
+  const { subject, html, text } = buildReminderEmail(records, new Date().toISOString().slice(0, 10));
+  res.json({ to: cfg.reminderEmailTo, from: cfg.reminderEmailFrom, subject, html, text, count: records.length });
+});
+
+app.post(
+  '/api/reminders/send-email',
+  wrap(async (req, res) => {
+    res.json(await sendReminderEmail());
+  })
+);
+
 app.post('/api/records/:taskGid/dismiss-reminder', (req, res) => {
   const record = dismissReminder(req.params.taskGid, req.body?.dismissed !== false);
   if (!record) return res.status(404).json({ error: 'Record not found' });
@@ -159,6 +174,33 @@ const server = app.listen(cfg.port, () => {
     )
   );
 });
+
+const emailStateFile = path.join(__dirname, 'data', 'email-state.json');
+
+function reminderSchedulerTick() {
+  const today = new Date().toISOString().slice(0, 10);
+  const hour = new Date().getHours();
+  let state = {};
+  try { state = JSON.parse(fs.readFileSync(emailStateFile, 'utf8')); } catch { /* first run */ }
+  if (state.lastSent === today || hour < cfg.reminderEmailHour) return;
+  sendReminderEmail()
+    .then((result) => {
+      if (result.sent) {
+        fs.mkdirSync(path.dirname(emailStateFile), { recursive: true });
+        fs.writeFileSync(emailStateFile, JSON.stringify({ lastSent: today, ...result }));
+        console.log(`Reminder email sent to ${result.to} (${result.count} clients)`);
+      }
+    })
+    .catch((err) => console.warn(`Reminder email failed: ${err.message}`));
+}
+
+if (cfg.schedulerEnabled) {
+  console.log(`Reminder email scheduler ON — daily to ${cfg.reminderEmailTo} after ${cfg.reminderEmailHour}:00`);
+  setInterval(reminderSchedulerTick, 30 * 60 * 1000);
+  setTimeout(reminderSchedulerTick, 15000);
+} else {
+  console.log('Reminder email scheduler OFF (SCHEDULER_ENABLED != true)');
+}
 
 for (const signal of ['SIGTERM', 'SIGINT']) {
   process.on(signal, () => {

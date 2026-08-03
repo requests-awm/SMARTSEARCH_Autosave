@@ -551,9 +551,25 @@ async function showReminders() {
     <div id="reminderList"><div class="card"><div class="skeleton" style="width:60%"></div></div></div>`;
   setBar(
     '<button class="btn btn-ghost" id="backBtn">← Back to Queue</button>',
-    '<button class="btn btn-outline" id="backfillBtn">⟳ Backfill from Insightly</button>'
+    '<button class="btn btn-outline" id="emailBtn">✉ Email reminders</button><button class="btn btn-outline" id="backfillBtn">⟳ Backfill from Insightly</button>'
   );
   document.getElementById('backBtn').onclick = showQueue;
+  document.getElementById('emailBtn').onclick = async () => {
+    const btn = document.getElementById('emailBtn');
+    const status = document.getElementById('backfillStatus');
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+    try {
+      const r = await api('/api/reminders/send-email', { method: 'POST' });
+      status.innerHTML = r.sent
+        ? `<div class="banner" style="background:var(--mint-bg);border-color:var(--mint-border);color:var(--mint-text)">✓ Reminder email sent to ${esc(r.to)} — ${r.count} client${r.count === 1 ? '' : 's'}.</div>`
+        : `<div class="banner">Nothing sent: ${esc(r.reason)}</div>`;
+    } catch (err) {
+      status.innerHTML = `<div class="banner red">Email failed: ${esc(err.message)}</div>`;
+    }
+    btn.disabled = false;
+    btn.textContent = '✉ Email reminders';
+  };
   document.getElementById('backfillBtn').onclick = async () => {
     const btn = document.getElementById('backfillBtn');
     const status = document.getElementById('backfillStatus');
