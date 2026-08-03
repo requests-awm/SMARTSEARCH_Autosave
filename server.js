@@ -34,7 +34,7 @@ app.use((req, res, next) => {
   next();
 });
 
-app.get('/healthz', (req, res) => res.json({ ok: true }));
+app.get(['/healthz', '/health'], (req, res) => res.json({ ok: true }));
 app.get('/favicon.svg', (req, res) =>
   res.type('image/svg+xml').sendFile(path.join(__dirname, 'public', 'favicon.svg'))
 );

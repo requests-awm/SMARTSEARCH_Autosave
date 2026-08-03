@@ -87,8 +87,9 @@ gcloud run deploy smartsearch-auto --source . --region europe-west2 --max-instan
   diverging local copies
 - **HTTPS/cookies**: Cloud Run terminates TLS; `trust proxy` is enabled so the SSO cookie
   gets its Secure flag automatically (or force with `COOKIE_SECURE=true`)
-- Docker `HEALTHCHECK` is ignored by Cloud Run (harmless); `/healthz` remains available
-  for uptime checks
+- Docker `HEALTHCHECK` is ignored by Cloud Run (harmless). For uptime checks on Cloud Run
+  use **`/health`** — Google's frontend reserves `/healthz` and answers it with its own 404
+  before the container ever sees it (`/healthz` still works locally/Docker)
 
 ## Flow in the UI
 
