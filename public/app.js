@@ -521,7 +521,11 @@ function recordCard(r) {
         <span class="badge gray"># ${esc(r.contactId)}</span>
       </div>
       <div class="task-chips">
-        ${r.insightlyVerified ? '<span class="pill mint">✓ Insightly verified</span>' : '<span class="pill red">✕ Insightly not verified</span>'}
+        ${r.insightlyVerified
+          ? '<span class="pill mint">✓ Insightly verified</span>'
+          : r.source === 'insightly_backfill'
+            ? '<span class="pill">⤓ Backfilled from Insightly</span>'
+            : '<span class="pill red">✕ Insightly not verified</span>'}
         <span class="pill">Expiry ${esc(r.expiryDate || '—')}</span>
         <span class="pill">Processed ${esc((r.processedAt || '').slice(0, 10))}</span>
       </div>
