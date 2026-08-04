@@ -606,7 +606,8 @@ async function showRemindersList() {
   try {
     const data = await api('/api/reminders');
     document.getElementById('reminderSub').textContent =
-      `Clients are flagged ${data.daysBefore} days before their SmartSearch expiry date.`;
+      `Clients are flagged ${data.daysBefore} days before their SmartSearch expiry date.` +
+      (data.referCount ? ` ${data.referCount} 'Refer' result${data.referCount === 1 ? '' : 's'} excluded (dummy 01/01/2000 expiry).` : '');
     if (!data.reminders.length) {
       list.innerHTML = `<div class="card empty-state"><div class="big">🔔</div>No tracked expiries yet — records appear here after processing.</div>`;
       return;

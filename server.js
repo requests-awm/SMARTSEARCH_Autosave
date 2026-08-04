@@ -11,6 +11,7 @@ import {
   allRecords,
   upsertRecord,
   hydrateFromSupabase,
+  isReferExpiry,
 } from './lib/store.js';
 import { sweepContactsWithSmartSearch } from './lib/insightly.js';
 import { dueReminders, buildReminderEmail, sendReminderEmail } from './lib/email.js';
@@ -109,10 +110,12 @@ app.get('/api/records', (req, res) => {
 
 app.get('/api/reminders', (req, res) => {
   const records = recordsWithReminders();
+  const referCount = recordsWithReminders({ includeRefer: true }).filter((r) => r.isRefer).length;
   res.json({
     reminders: records,
     dueCount: records.filter((r) => r.reminder.status === 'due' || r.reminder.status === 'expired').length,
     daysBefore: cfg.reminderDaysBefore,
+    referCount,
   });
 });
 
@@ -123,6 +126,7 @@ app.post(
     const { scanned, contacts } = await sweepContactsWithSmartSearch();
     let added = 0;
     let skipped = 0;
+    let referSkipped = 0;
     for (const contact of contacts) {
       if (existingContactIds.has(contact.contactId)) {
         skipped++;
@@ -130,6 +134,10 @@ app.post(
       }
       if (!contact.expiryDate) {
         skipped++;
+        continue;
+      }
+      if (isReferExpiry(contact)) {
+        referSkipped++;
         continue;
       }
       upsertRecord({
@@ -145,7 +153,7 @@ app.post(
       });
       added++;
     }
-    res.json({ scanned, withSmartSearch: contacts.length, added, skipped });
+    res.json({ scanned, withSmartSearch: contacts.length, added, skipped, referSkipped });
   })
 );
 

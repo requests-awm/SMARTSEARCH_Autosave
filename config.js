@@ -20,6 +20,12 @@ export const cfg = {
   expiryYears: Number(env('EXPIRY_YEARS', '5')),
   reminderDaysBefore: Number(env('REMINDER_DAYS_BEFORE', '2')),
 
+  // Dummy expiry window marking a "Refer" SmartSearch (Asana rule writes 01/01/2000;
+  // Insightly timezone conversion can shift it a day either way).
+  referDummyFrom: env('REFER_DUMMY_FROM', '1999-12-30'),
+  referDummyTo: env('REFER_DUMMY_TO', '2000-01-02'),
+  referSectionGid: env('ASANA_REFER_SECTION_GID', '1211957532096866'),
+
   ssoSecret: env('SSO_SHARED_SECRET'),
   ssoAud: env('SSO_AUD'),
   ssoEnforced: env('SSO_ENFORCED', 'true').toLowerCase() !== 'false',
