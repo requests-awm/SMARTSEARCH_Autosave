@@ -15,7 +15,7 @@ import {
 import { sweepContactsWithSmartSearch } from './lib/insightly.js';
 import { dueReminders, buildReminderEmail, sendReminderEmail } from './lib/email.js';
 import fs from 'node:fs';
-import { ssoMiddleware } from './lib/sso.js';
+import { ssoMiddleware, csrfGuard, secretStrength } from './lib/sso.js';
 import { registerGoogleLoginRoutes } from './lib/googlelogin.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -50,7 +50,14 @@ if (cfg.ssoEnforced) {
     console.error('Set SSO_SHARED_SECRET (and SSO_AUD), or set SSO_ENFORCED=false to explicitly disable.');
     process.exit(1);
   }
+  const strength = secretStrength();
+  if (!strength.isBase64 || strength.bytes < 32) {
+    console.warn(
+      `WARNING: SSO_SHARED_SECRET is weak (${strength.bytes} bytes${strength.isBase64 ? '' : ', not base64'}) — rotate it.`
+    );
+  }
   app.use(ssoMiddleware);
+  app.use(csrfGuard);
 } else {
   console.warn('WARNING: SSO_ENFORCED=false — the app is running WITHOUT authentication.');
 }

@@ -57,8 +57,12 @@ function setBar(leftHtml, rightHtml) {
   barRight.innerHTML = rightHtml;
 }
 
+function withCsrf(options = {}) {
+  return { ...options, headers: { ...(options.headers || {}), 'X-Requested-With': 'smartsearch-auto' } };
+}
+
 async function api(path, options) {
-  const res = await fetch(path, options);
+  const res = await fetch(path, withCsrf(options));
   const body = await res.json();
   if (!res.ok) throw new Error(body.error || res.statusText);
   return body;
@@ -374,7 +378,8 @@ async function runProcess() {
   renderProcessView();
 
   try {
-    const res = await fetch(`/api/tasks/${t.gid}/process`, { method: 'POST' });
+    const res = await fetch(`/api/tasks/${t.gid}/process`, withCsrf({ method: 'POST' }));
+    if (!res.ok) throw new Error(`Processing request rejected (${res.status})`);
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
