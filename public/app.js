@@ -625,13 +625,23 @@ async function showRemindersList() {
       ${dismissed.length ? `<div class="findings-label" style="margin:14px 0 8px">Dismissed (${dismissed.length})</div>${capped(dismissed, (r) => reminderCard(r, false, true))}` : ''}`;
     list.querySelectorAll('[data-dismiss]').forEach((btn) => {
       btn.onclick = async () => {
-        await api(`/api/records/${btn.dataset.dismiss}/dismiss-reminder`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ dismissed: btn.dataset.restore !== '1' }),
-        });
-        await refreshReminderBadge();
-        showRemindersList();
+        const label = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = '…';
+        try {
+          await api(`/api/records/${encodeURIComponent(btn.dataset.dismiss)}/dismiss-reminder`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ dismissed: btn.dataset.restore !== '1' }),
+          });
+          await refreshReminderBadge();
+          showRemindersList();
+        } catch (err) {
+          btn.disabled = false;
+          btn.textContent = label;
+          const status = document.getElementById('backfillStatus');
+          if (status) status.innerHTML = `<div class="banner red">Dismiss failed: ${esc(err.message)} — try a hard refresh (Ctrl+Shift+R) to load the latest app.</div>`;
+        }
       };
     });
   } catch (err) {
