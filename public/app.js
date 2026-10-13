@@ -83,8 +83,12 @@ async function refreshReminderBadge() {
 async function showQueue() {
   state.view = 'queue';
   setStep(0);
-  setBar('<span>⚠</span><span>↥</span>', '<button class="btn btn-outline" id="refreshBtn">↻ Refresh</button>');
+  setBar(
+    '<span>⚠</span><span>↥</span>',
+    '<button class="btn btn-outline" id="exportBtn">⤓ Export outstanding</button><button class="btn btn-outline" id="refreshBtn">↻ Refresh</button>'
+  );
   document.getElementById('refreshBtn').onclick = () => { state.tasks = null; showQueue(); };
+  document.getElementById('exportBtn').onclick = exportOutstanding;
 
   const configBanner = state.config?.missingCredentials?.length
     ? `<div class="banner">⚠ Missing credentials in <strong>.env</strong>: ${esc(state.config.missingCredentials.join(', '))}. The queue and pipeline need these to run.</div>`
@@ -127,6 +131,42 @@ function taskStatusPill(t) {
   if (!t.allFieldsFilled) problems.push('Fields missing');
   if (!t.hasPdf) problems.push('No PDF attachment');
   return `<span class="pill red">✕ ${esc(problems.join(' · '))}</span>`;
+}
+
+function missingItems(t) {
+  const missing = [];
+  if (!t.contactId) missing.push('Contact ID in task name');
+  t.requiredFields.filter((f) => !f.filled).forEach((f) => missing.push(f.requiredName));
+  if (!t.hasPdf) missing.push('PDF attachment');
+  if (t.isRefer) missing.push("'Refer' result");
+  return missing;
+}
+
+// Leading = + - @ would be run as a formula when the CSV is opened in Excel.
+const csvCell = (v) => {
+  let s = String(v ?? '');
+  if (/^[=+\-@]/.test(s)) s = `'${s}`;
+  return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+};
+
+function exportOutstanding() {
+  if (!state.tasks) return;
+  const outstanding = state.tasks.filter((t) => !t.eligible && !t.alreadyProcessed);
+  if (!outstanding.length) {
+    alert('No outstanding tasks — everything in the queue is ready or already processed.');
+    return;
+  }
+  const header = ['Task name', 'Contact ID', 'Missing', 'Conducted date', 'Expiry date', 'Attachments', 'Asana link'];
+  const rows = outstanding.map((t) => [
+    t.name, t.contactId, missingItems(t).join('; '), t.conductedDate, t.expiryDate, t.attachmentCount, t.permalink,
+  ]);
+  const csv = [header, ...rows].map((row) => row.map(csvCell).join(',')).join('\r\n');
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `smartsearch-outstanding-${new Date().toISOString().slice(0, 10)}.csv`;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(link.href), 1000);
 }
 
 function renderTaskList() {
@@ -612,6 +652,7 @@ async function showRemindersList() {
       list.innerHTML = `<div class="card empty-state"><div class="big">🔔</div>No tracked expiries yet — records appear here after processing.</div>`;
       return;
     }
+    state.expiryTaskDaysBefore = data.expiryTaskDaysBefore;
     const attention = data.reminders.filter((r) => r.reminder.status === 'due' || r.reminder.status === 'expired');
     const upcoming = data.reminders.filter((r) => r.reminder.status === 'upcoming');
     const dismissed = data.reminders.filter((r) => r.reminder.status === 'dismissed');
@@ -644,6 +685,21 @@ async function showRemindersList() {
         }
       };
     });
+    list.querySelectorAll('[data-expiry-task]').forEach((btn) => {
+      btn.onclick = async () => {
+        btn.disabled = true;
+        btn.textContent = 'Creating…';
+        try {
+          await api(`/api/records/${encodeURIComponent(btn.dataset.expiryTask)}/expiry-task`, { method: 'POST' });
+          showRemindersList();
+        } catch (err) {
+          btn.disabled = false;
+          btn.textContent = '＋ Asana task';
+          const status = document.getElementById('backfillStatus');
+          if (status) status.innerHTML = `<div class="banner red">Asana task failed: ${esc(err.message)}</div>`;
+        }
+      };
+    });
   } catch (err) {
     list.innerHTML = `<div class="banner red">Could not load reminders: ${esc(err.message)}</div>`;
   }
@@ -664,6 +720,11 @@ function reminderCard(r, urgent, isDismissed = false) {
         </div>
         <div style="display:flex;align-items:center;gap:10px">
           <span class="reminder-days ${urgent ? 'due' : 'upcoming'}">${urgent ? '⚠ ' : ''}${daysLabel}</span>
+          ${r.expiryTaskUrl
+            ? `<a class="doc-chip" href="${safeUrl(r.expiryTaskUrl)}" target="_blank">🡕 Renewal task</a>`
+            : days <= (state.expiryTaskDaysBefore ?? 5)
+              ? `<button class="btn btn-outline" data-expiry-task="${esc(r.taskGid)}">＋ Asana task</button>`
+              : ''}
           ${urgent ? `<button class="btn btn-outline" data-dismiss="${esc(r.taskGid)}">Dismiss</button>` : ''}
           ${isDismissed ? `<button class="btn btn-outline" data-dismiss="${esc(r.taskGid)}" data-restore="1">Restore</button>` : ''}
         </div>

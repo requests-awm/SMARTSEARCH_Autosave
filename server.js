@@ -15,6 +15,7 @@ import {
 } from './lib/store.js';
 import { sweepContactsWithSmartSearch } from './lib/insightly.js';
 import { dueReminders, buildReminderEmail, sendReminderEmail } from './lib/email.js';
+import { createExpiryTask, createDueExpiryTasks } from './lib/expiryTasks.js';
 import fs from 'node:fs';
 import { ssoMiddleware, csrfGuard, secretStrength } from './lib/sso.js';
 import { registerGoogleLoginRoutes } from './lib/googlelogin.js';
@@ -115,6 +116,7 @@ app.get('/api/reminders', (req, res) => {
     reminders: records,
     dueCount: records.filter((r) => r.reminder.status === 'due' || r.reminder.status === 'expired').length,
     daysBefore: cfg.reminderDaysBefore,
+    expiryTaskDaysBefore: cfg.expiryTaskDaysBefore,
     referCount,
   });
 });
@@ -176,6 +178,18 @@ app.post('/api/records/:taskGid/dismiss-reminder', (req, res) => {
   res.json({ record });
 });
 
+app.post(
+  '/api/records/:taskGid/expiry-task',
+  wrap(async (req, res) => {
+    const record = recordsWithReminders().find((r) => r.taskGid === req.params.taskGid);
+    if (!record) return res.status(404).json({ error: 'Record not found' });
+    if (record.reminder.daysToExpiry > cfg.expiryTaskDaysBefore) {
+      return res.status(400).json({ error: `Renewal tasks can only be created within ${cfg.expiryTaskDaysBefore} days of expiry` });
+    }
+    res.json(await createExpiryTask(record));
+  })
+);
+
 app.post('/api/tasks/:gid/process', (req, res) => {
   res.setHeader('Content-Type', 'application/x-ndjson');
   res.setHeader('Cache-Control', 'no-cache');
@@ -223,6 +237,31 @@ if (cfg.schedulerEnabled) {
   setTimeout(reminderSchedulerTick, 15000);
 } else {
   console.log('Reminder email scheduler OFF (SCHEDULER_ENABLED != true)');
+}
+
+let expiryTickRunning = false;
+
+async function expiryTaskTick() {
+  if (expiryTickRunning) return;
+  expiryTickRunning = true;
+  try {
+    const result = await createDueExpiryTasks();
+    if (result.created || result.failed) {
+      console.log(`Renewal tasks: ${result.created} created, ${result.linked} already existed, ${result.failed} failed`);
+    }
+  } catch (err) {
+    console.warn(`Renewal task tick error: ${err.message}`);
+  } finally {
+    expiryTickRunning = false;
+  }
+}
+
+if (cfg.expiryTasksEnabled) {
+  console.log(`Renewal tasks ON — Asana task raised ${cfg.expiryTaskDaysBefore} days before expiry (checked hourly)`);
+  setInterval(expiryTaskTick, 60 * 60 * 1000);
+  setTimeout(expiryTaskTick, 25000);
+} else {
+  console.log('Renewal tasks OFF (EXPIRY_TASKS_ENABLED != true) — use the button on the Reminders screen');
 }
 
 const autoFailures = new Map();

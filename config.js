@@ -19,6 +19,9 @@ export const cfg = {
   expiryFieldName: env('EXPIRY_FIELD_NAME', 'aU_SmartSearch_Expiry_Date'),
   expiryYears: Number(env('EXPIRY_YEARS', '5')),
   reminderDaysBefore: Number(env('REMINDER_DAYS_BEFORE', '2')),
+  expiryTasksEnabled: env('EXPIRY_TASKS_ENABLED', 'false').toLowerCase() === 'true',
+  expiryTaskDaysBefore: Number(env('EXPIRY_TASK_DAYS_BEFORE', '5')),
+  expiryTaskSectionGid: env('ASANA_EXPIRY_TASK_SECTION_GID', '1211423560008760'),
 
   // Dummy expiry window marking a "Refer" SmartSearch (Asana rule writes 01/01/2000;
   // Insightly timezone conversion can shift it a day either way).
@@ -60,6 +63,7 @@ export const cfg = {
   insightlyBaseUrl: env('INSIGHTLY_API_URL', 'https://api.na1.insightly.com/v3.1'),
   insightlyUrlField: env('INSIGHTLY_URL_FIELD', 'SmartSearch_URL__c'),
   insightlyExpiryField: env('INSIGHTLY_EXPIRY_FIELD', 'SmartSearch_Expiry_Date__c'),
+  insightlySubTeamField: env('INSIGHTLY_SUB_TEAM_FIELD', 'CONTACT_FIELD_35'),
 
   driveId: env('GDRIVE_SHARED_DRIVE_ID', '0AI3XFY5Ifk7VUk9PVA'),
   folderTemplate: env('GDRIVE_FOLDER_TEMPLATE', 'A - Anti-Money Laundering - {CONTACT_ID} - DUAL'),
