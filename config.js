@@ -64,6 +64,11 @@ export const cfg = {
   insightlyUrlField: env('INSIGHTLY_URL_FIELD', 'SmartSearch_URL__c'),
   insightlyExpiryField: env('INSIGHTLY_EXPIRY_FIELD', 'SmartSearch_Expiry_Date__c'),
   insightlySubTeamField: env('INSIGHTLY_SUB_TEAM_FIELD', 'CONTACT_FIELD_35'),
+  insightlyClientTypeField: env('INSIGHTLY_CLIENT_TYPE_FIELD', 'CONTACT_FIELD_78'),
+  expiryTaskExcludedClientTypes: env('EXPIRY_TASK_EXCLUDED_CLIENT_TYPES', 'Deceased,Non Active Contact')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean),
 
   driveId: env('GDRIVE_SHARED_DRIVE_ID', '0AI3XFY5Ifk7VUk9PVA'),
   folderTemplate: env('GDRIVE_FOLDER_TEMPLATE', 'A - Anti-Money Laundering - {CONTACT_ID} - DUAL'),

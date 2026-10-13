@@ -186,7 +186,11 @@ app.post(
     if (record.reminder.daysToExpiry > cfg.expiryTaskDaysBefore) {
       return res.status(400).json({ error: `Renewal tasks can only be created within ${cfg.expiryTaskDaysBefore} days of expiry` });
     }
-    res.json(await createExpiryTask(record));
+    const outcome = await createExpiryTask(record);
+    if (outcome.skipped) {
+      return res.status(409).json({ error: `Client is ${outcome.clientType} in Insightly — no renewal task created` });
+    }
+    res.json(outcome);
   })
 );
 
@@ -247,7 +251,7 @@ async function expiryTaskTick() {
   try {
     const result = await createDueExpiryTasks();
     if (result.created || result.failed) {
-      console.log(`Renewal tasks: ${result.created} created, ${result.linked} already existed, ${result.failed} failed`);
+      console.log(`Renewal tasks: ${result.created} created, ${result.linked} already existed, ${result.skipped} skipped (inactive client), ${result.failed} failed`);
     }
   } catch (err) {
     console.warn(`Renewal task tick error: ${err.message}`);
