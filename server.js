@@ -15,7 +15,7 @@ import {
 } from './lib/store.js';
 import { sweepContactsWithSmartSearch } from './lib/insightly.js';
 import { dueReminders, buildReminderEmail, sendReminderEmail } from './lib/email.js';
-import { createExpiryTask, createDueExpiryTasks } from './lib/expiryTasks.js';
+import { createExpiryTask, createDueExpiryTasks, relinkExpiryTasks } from './lib/expiryTasks.js';
 import fs from 'node:fs';
 import { ssoMiddleware, csrfGuard, secretStrength } from './lib/sso.js';
 import { registerGoogleLoginRoutes } from './lib/googlelogin.js';
@@ -207,13 +207,17 @@ const server = app.listen(cfg.port, () => {
   const missing = missingCredentials();
   console.log(`SmartSearch Auto running on http://localhost:${cfg.port}`);
   if (missing.length) console.log(`Missing credentials: ${missing.join(', ')}`);
-  hydrateFromSupabase().then((result) =>
-    console.log(
-      result.hydrated
-        ? `Store hydrated from Supabase: ${result.remote} remote records, ${result.applied} applied locally`
-        : `Store hydration skipped: ${result.reason}`
+  hydrateFromSupabase()
+    .then((result) =>
+      console.log(
+        result.hydrated
+          ? `Store hydrated from Supabase: ${result.remote} remote records, ${result.applied} applied locally`
+          : `Store hydration skipped: ${result.reason}`
+      )
     )
-  );
+    .then(() => (cfg.asanaPat ? relinkExpiryTasks() : 0))
+    .then((linked) => linked && console.log(`Re-linked ${linked} existing renewal task(s) from Asana`))
+    .catch((err) => console.warn(`Renewal task re-link failed: ${err.message}`));
 });
 
 const emailStateFile = path.join(__dirname, 'data', 'email-state.json');
